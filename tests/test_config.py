@@ -19,3 +19,4 @@ def test_load_config(tmp_path):
     assert first.ip == "192.168.1.50"
     assert first.pixel_count == 150
     assert first.group == "stage_left"
+    assert first.universe == 0

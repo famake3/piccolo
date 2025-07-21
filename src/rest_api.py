@@ -22,6 +22,7 @@ class DeviceModel(BaseModel):
     ip: str
     pixel_count: int
     group: Optional[str] = None
+    universe: int = 0
 
 
 class GroupModel(BaseModel):
@@ -144,7 +145,8 @@ class RestAPI:
                 raise HTTPException(status_code=404, detail="Device not found")
             payload = bytes.fromhex(cmd.data)
             client = ArtNetClient(self.devices[name].ip)
-            client.send_dmx(cmd.universe, payload)
+            base = self.devices[name].universe
+            client.send_dmx(base + cmd.universe, payload)
             return {"status": "sent"}
 
         @self.app.post("/groups/{name}/command")
@@ -154,7 +156,8 @@ class RestAPI:
             for dev_name in self.groups[name]:
                 payload = bytes.fromhex(cmd.data)
                 client = ArtNetClient(self.devices[dev_name].ip)
-                client.send_dmx(cmd.universe, payload)
+                base = self.devices[dev_name].universe
+                client.send_dmx(base + cmd.universe, payload)
             return {"status": "sent"}
 
         @self.app.post("/groups/{name}/effect")
@@ -173,7 +176,8 @@ class RestAPI:
                 else:
                     raise HTTPException(status_code=400, detail="Unknown effect")
                 payload = EffectEngine.to_bytes(frame)
-                ArtNetClient(self.devices[dev_name].ip).send_dmx(0, payload)
+                base = self.devices[dev_name].universe
+                ArtNetClient(self.devices[dev_name].ip).send_dmx(base, payload)
             return {"status": "sent"}
 
         @self.app.post("/devices/{name}/effect")
@@ -198,7 +202,8 @@ class RestAPI:
             else:
                 raise HTTPException(status_code=400, detail="Unknown effect")
             payload = EffectEngine.to_bytes(frame)
-            ArtNetClient(self.devices[name].ip).send_dmx(0, payload)
+            base = self.devices[name].universe
+            ArtNetClient(self.devices[name].ip).send_dmx(base, payload)
             return {"status": "sent"}
 
         @self.app.post("/triggers/{event}")
