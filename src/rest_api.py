@@ -25,7 +25,6 @@ class DeviceModel(BaseModel):
     name: str
     ip: str
     pixel_count: int
-    group: Optional[str] = None
     universe: int = 0
 
 
@@ -118,7 +117,7 @@ class RestAPI:
         def register_device(device: DeviceModel) -> Dict[str, str]:
             if device.name in self.devices:
                 raise HTTPException(status_code=400, detail="Device already exists")
-            self.devices[device.name] = LEDDevice(**device.dict())
+            self.devices[device.name] = LEDDevice(**device.model_dump())
             return {"status": "registered"}
 
         @self.app.get("/groups")
