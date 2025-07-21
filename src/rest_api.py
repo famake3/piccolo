@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
 from pydantic import BaseModel
 
+from .config import Config, load_config
 from .devices import LEDDevice, LEDSegment, LightGroup
 from .effects import Color, EffectEngine
 from .favorites import FavoritesManager
@@ -70,14 +71,24 @@ class ColorPayload(BaseModel):
 class RestAPI:
     """Simple REST API server providing device management."""
 
-    def __init__(self) -> None:
+    def __init__(self, config: Config | str | Path | None = None) -> None:
         self.app = FastAPI(title="Piccolo Control Panel")
         self.devices: Dict[str, LEDDevice] = {}
         self.groups: Dict[str, LightGroup] = {}
         self.favorites = FavoritesManager()
         self.event_hooks: Dict[str, Callable[[dict | None], None]] = {}
         self.effect_engines: Dict[str, EffectEngine] = {}
+        if config:
+            self.load_config(config)
         self._setup_routes()
+
+    def load_config(self, config: Config | str | Path) -> None:
+        """Populate devices and groups from a configuration."""
+        cfg = load_config(config) if isinstance(config, (str, Path)) else config
+        for dev in cfg.devices:
+            self.devices[dev.name] = dev
+            if dev.group:
+                self.groups.setdefault(dev.group, []).append(dev.name)
 
     def add_event_hook(self, name: str, handler: Callable[[dict | None], None]) -> None:
         """Register a handler to be invoked when an event is triggered."""

@@ -89,7 +89,7 @@ The project includes a small FastAPI application exposing REST endpoints
 for device and group management. Launch the server with:
 
 ```bash
-python -m src.rest_api
+python -m piccolo --config config.yaml
 ```
 
 By default it will listen on <http://localhost:8000>. A simple HTML panel
