@@ -47,7 +47,8 @@ Several modules are provided which you can extend:
 
 * `src/rest_api.py` – FastAPI-based REST API server and web panel.
 * `src/mqtt.py` – add MQTT handling if required.
-* `src/effects.py` – build a light effect engine.
+* `src/effects.py` – light effect engine with basic animations.
+* `src/favorites.py` – store favourite colors for reuse.
 
 Networking helpers for Art-Net are in `src/network.py` and LED device
 definitions in `src/devices.py`.
@@ -89,5 +90,11 @@ is available at `/panel` and the following API endpoints are exposed:
 * `POST /groups` – create a new group.
 * `POST /devices/{name}/command` – send a hex encoded DMX payload to a device.
 * `POST /groups/{name}/command` – send a command to all devices in a group.
+* `POST /devices/{name}/effect` – run a built-in light effect on a device.
+* `POST /groups/{name}/effect` – run an effect on all devices in a group.
+* `GET /favorites` – list stored colours.
+* `POST /favorites` – add a favourite colour.
+* `DELETE /favorites/{name}` – remove a favourite colour.
+* `POST /triggers/{event}` – trigger a named event hook.
 
 Use any HTTP client or the web panel to manage your lighting setup.
