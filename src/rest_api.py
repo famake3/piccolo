@@ -185,17 +185,18 @@ class RestAPI:
             return {"status": "sent"}
 
         @self.app.post("/devices/{name}/color")
-        def set_device_color(name: str, color: ColorPayload) -> Dict[str, str]:
+        def set_device_color(name: str, color: ColorPayload, universe: int = 0) -> Dict[str, str]:
             if name not in self.devices:
                 raise HTTPException(status_code=404, detail="Device not found")
             device = self.devices[name]
             frame = [Color(color.r, color.g, color.b) for _ in range(device.pixel_count)]
             payload = EffectEngine.to_bytes(frame)
-            ArtNetClient(device.ip).send_dmx(device.universe, payload)
+            base = device.universe
+            ArtNetClient(device.ip).send_dmx(base + universe, payload)
             return {"status": "sent"}
 
         @self.app.post("/groups/{name}/color")
-        def set_group_color(name: str, color: ColorPayload) -> Dict[str, str]:
+        def set_group_color(name: str, color: ColorPayload, universe: int = 0) -> Dict[str, str]:
             if name not in self.groups:
                 raise HTTPException(status_code=404, detail="Group not found")
             group = self.groups[name]
@@ -210,11 +211,12 @@ class RestAPI:
                         if 0 <= i < device.pixel_count:
                             frame[i] = Color(color.r, color.g, color.b)
                 payload = EffectEngine.to_bytes(frame)
-                ArtNetClient(device.ip).send_dmx(device.universe, payload)
+                base = device.universe
+                ArtNetClient(device.ip).send_dmx(base + universe, payload)
             return {"status": "sent"}
 
         @self.app.post("/groups/{name}/effect")
-        def run_group_effect(name: str, effect: str, step: int = 0) -> Dict[str, str]:
+        def run_group_effect(name: str, effect: str, step: int = 0, universe: int = 0) -> Dict[str, str]:
             if name not in self.groups:
                 raise HTTPException(status_code=404, detail="Group not found")
             group = self.groups[name]
@@ -240,11 +242,11 @@ class RestAPI:
                             base_frame[i] = col
                 payload = EffectEngine.to_bytes(base_frame)
                 base = device.universe
-                ArtNetClient(device.ip).send_dmx(base, payload)
+                ArtNetClient(device.ip).send_dmx(base + universe, payload)
             return {"status": "sent"}
 
         @self.app.post("/devices/{name}/effect")
-        def run_device_effect(name: str, effect: str, step: int = 0) -> Dict[str, str]:
+        def run_device_effect(name: str, effect: str, step: int = 0, universe: int = 0) -> Dict[str, str]:
             if name not in self.devices:
                 raise HTTPException(status_code=404, detail="Device not found")
             engine = self._get_engine(name)
@@ -266,7 +268,7 @@ class RestAPI:
                 raise HTTPException(status_code=400, detail="Unknown effect")
             payload = EffectEngine.to_bytes(frame)
             base = self.devices[name].universe
-            ArtNetClient(self.devices[name].ip).send_dmx(base, payload)
+            ArtNetClient(self.devices[name].ip).send_dmx(base + universe, payload)
             return {"status": "sent"}
 
         @self.app.post("/triggers/{event}")

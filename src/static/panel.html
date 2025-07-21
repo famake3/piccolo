@@ -52,6 +52,7 @@
           <option value="group">Group</option>
         </select>
         <input type="color" id="color-picker" value="#ffffff">
+        <input id="color-universe" type="number" value="0" min="0" step="1" placeholder="Universe">
         <button type="submit">Send</button>
       </fieldset>
     </form>
@@ -69,6 +70,7 @@
           <option value="wave">Wave</option>
           <option value="flicker">Flicker</option>
         </select>
+        <input id="effect-universe" type="number" value="0" min="0" step="1" placeholder="Universe">
         <button type="submit">Run</button>
       </fieldset>
     </form>
@@ -150,8 +152,9 @@ document.getElementById('color-form').addEventListener('submit', async (e) => {
   const r = parseInt(hex.substring(0,2), 16);
   const g = parseInt(hex.substring(2,4), 16);
   const b = parseInt(hex.substring(4,6), 16);
+  const universe = parseInt(document.getElementById('color-universe').value || '0', 10);
   const payload = {r, g, b};
-  await postJson(`/${targetType}s/${name}/color`, payload);
+  await postJson(`/${targetType}s/${name}/color?universe=${universe}`, payload);
 });
 
 document.getElementById('effect-form').addEventListener('submit', async (e) => {
@@ -159,7 +162,8 @@ document.getElementById('effect-form').addEventListener('submit', async (e) => {
   const name = document.getElementById('effect-target').value;
   const targetType = document.getElementById('effect-type').value;
   const effect = document.getElementById('effect-name').value;
-  await fetch(`/${targetType}s/${name}/effect?effect=${effect}`, {method:'POST'});
+  const universe = parseInt(document.getElementById('effect-universe').value || '0', 10);
+  await fetch(`/${targetType}s/${name}/effect?effect=${effect}&universe=${universe}`, {method:'POST'});
 });
 </script>
 </body>

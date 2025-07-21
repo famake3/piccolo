@@ -17,6 +17,18 @@ Install Python dependencies:
 pip install -r requirements.txt
 ```
 
+## Quick Start
+
+After installing the dependencies, launch the built-in REST API server and
+web panel:
+
+```bash
+python -m src.rest_api
+```
+
+The server listens on <http://localhost:8000>. Open `/panel` in your browser
+to register devices and begin controlling your LEDs.
+
 ## Configuration
 
 Devices are described in a YAML configuration file. See
@@ -91,10 +103,15 @@ is available at `/panel` and the following API endpoints are exposed:
 * `POST /groups/{name}/command` – send a command to all devices in a group.
 * `POST /devices/{name}/effect` – run a built-in light effect on a device.
 * `POST /groups/{name}/effect` – run an effect on all devices in a group.
+* `POST /devices/{name}/color` – set a device to a solid color.
+* `POST /groups/{name}/color` – set a group of devices to a color.
 * `GET /favorites` – list stored colours.
 * `POST /favorites` – add a favourite colour.
 * `DELETE /favorites/{name}` – remove a favourite colour.
 * `POST /triggers/{event}` – trigger a named event hook.
+
+Color and effect endpoints accept an optional `universe` query parameter
+which is added to each device's base universe when sending data.
 
 Use any HTTP client or the web panel to manage your lighting setup.
 
