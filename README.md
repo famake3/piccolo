@@ -43,10 +43,9 @@ config = load_config("config.yaml")
 
 ## Extending
 
-Several placeholder classes are provided:
+Several modules are provided which you can extend:
 
-* `src/rest_api.py` – implement a REST API using your favourite
-  framework.
+* `src/rest_api.py` – FastAPI-based REST API server and web panel.
 * `src/mqtt.py` – add MQTT handling if required.
 * `src/effects.py` – build a light effect engine.
 
@@ -71,3 +70,24 @@ for device in cfg.devices:
 
 This will send a zeroed DMX packet to each device. Build on top of this
 to create your own lighting controller.
+
+## REST API and Web Panel
+
+The project includes a small FastAPI application exposing REST endpoints
+for device and group management. Launch the server with:
+
+```bash
+python -m src.rest_api
+```
+
+By default it will listen on <http://localhost:8000>. A simple HTML panel
+is available at `/panel` and the following API endpoints are exposed:
+
+* `GET /devices` – list registered devices.
+* `POST /devices` – register a new device.
+* `GET /groups` – list groups and their members.
+* `POST /groups` – create a new group.
+* `POST /devices/{name}/command` – send a hex encoded DMX payload to a device.
+* `POST /groups/{name}/command` – send a command to all devices in a group.
+
+Use any HTTP client or the web panel to manage your lighting setup.
