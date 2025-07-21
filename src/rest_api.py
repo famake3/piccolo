@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, TYPE_CHECKING
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, PlainTextResponse
@@ -13,6 +13,9 @@ from .devices import LEDDevice
 from .effects import Color, EffectEngine
 from .favorites import FavoritesManager
 from .network import ArtNetClient
+
+if TYPE_CHECKING:
+    from .mqtt import MQTTClient
 
 
 class DeviceModel(BaseModel):
@@ -69,7 +72,7 @@ class RestAPI:
             self.effect_engines[name] = EffectEngine(pixel_count)
         return self.effect_engines[name]
 
-    def attach_mqtt(self, topic: str, mqtt_client: "MQTTClient", event: str) -> None:
+    def attach_mqtt(self, topic: str, mqtt_client: MQTTClient, event: str) -> None:
         """Bind an MQTT topic to a named event."""
 
         def _callback(message: str) -> None:
