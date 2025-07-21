@@ -10,7 +10,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
 from pydantic import BaseModel
 
-from .devices import LEDDevice
+from .devices import LEDDevice, LEDSegment, LightGroup
 from .effects import Color, EffectEngine
 from .favorites import FavoritesManager
 from .network import ArtNetClient
@@ -29,11 +29,19 @@ class DeviceModel(BaseModel):
     universe: int = 0
 
 
+class SegmentModel(BaseModel):
+    """Model describing a device segment."""
+
+    device: str
+    start: int
+    length: int
+
+
 class GroupModel(BaseModel):
     """Model for group creation."""
 
     name: str
-    devices: List[str] = []
+    segments: List[SegmentModel]
 
 
 class LightCommand(BaseModel):
@@ -66,7 +74,7 @@ class RestAPI:
     def __init__(self) -> None:
         self.app = FastAPI(title="Piccolo Control Panel")
         self.devices: Dict[str, LEDDevice] = {}
-        self.groups: Dict[str, List[str]] = {}
+        self.groups: Dict[str, LightGroup] = {}
         self.favorites = FavoritesManager()
         self.event_hooks: Dict[str, Callable[[dict | None], None]] = {}
         self.effect_engines: Dict[str, EffectEngine] = {}
@@ -111,26 +119,30 @@ class RestAPI:
             if device.name in self.devices:
                 raise HTTPException(status_code=400, detail="Device already exists")
             self.devices[device.name] = LEDDevice(**device.dict())
-            if device.group:
-                self.groups.setdefault(device.group, []).append(device.name)
             return {"status": "registered"}
 
         @self.app.get("/groups")
-        def list_groups() -> Dict[str, List[str]]:
-            return self.groups
+        def list_groups() -> Dict[str, List[Dict[str, int | str]]]:
+            result: Dict[str, List[Dict[str, int | str]]] = {}
+            for name, group in self.groups.items():
+                result[name] = [asdict(seg) for seg in group.segments]
+            return result
 
         @self.app.post("/groups")
         def create_group(group: GroupModel) -> Dict[str, str]:
             if group.name in self.groups:
                 raise HTTPException(status_code=400, detail="Group already exists")
-            for dev_name in group.devices:
-                if dev_name not in self.devices:
+            segments: List[LEDSegment] = []
+            for seg in group.segments:
+                if seg.device not in self.devices:
                     raise HTTPException(
-                        status_code=404, detail=f"Device {dev_name} not found"
+                        status_code=404, detail=f"Device {seg.device} not found"
                     )
-            self.groups[group.name] = list(group.devices)
-            for dev_name in group.devices:
-                self.devices[dev_name].group = group.name
+                device = self.devices[seg.device]
+                if seg.start < 0 or seg.start + seg.length > device.pixel_count:
+                    raise HTTPException(status_code=400, detail="Segment out of range")
+                segments.append(LEDSegment(seg.device, seg.start, seg.length))
+            self.groups[group.name] = LightGroup(group.name, segments)
             return {"status": "group created"}
 
         @self.app.get("/favorites")
@@ -161,11 +173,16 @@ class RestAPI:
         def send_group_command(name: str, cmd: LightCommand) -> Dict[str, str]:
             if name not in self.groups:
                 raise HTTPException(status_code=404, detail="Group not found")
-            for dev_name in self.groups[name]:
+            group = self.groups[name]
+            sent_to = set()
+            for seg in group.segments:
+                if seg.device in sent_to:
+                    continue
                 payload = bytes.fromhex(cmd.data)
-                client = ArtNetClient(self.devices[dev_name].ip)
-                base = self.devices[dev_name].universe
+                client = ArtNetClient(self.devices[seg.device].ip)
+                base = self.devices[seg.device].universe
                 client.send_dmx(base + cmd.universe, payload)
+                sent_to.add(seg.device)
             return {"status": "sent"}
 
         @self.app.post("/devices/{name}/color")
@@ -182,9 +199,17 @@ class RestAPI:
         def set_group_color(name: str, color: ColorPayload) -> Dict[str, str]:
             if name not in self.groups:
                 raise HTTPException(status_code=404, detail="Group not found")
-            for dev_name in self.groups[name]:
+            group = self.groups[name]
+            by_device: Dict[str, List[LEDSegment]] = {}
+            for seg in group.segments:
+                by_device.setdefault(seg.device, []).append(seg)
+            for dev_name, segs in by_device.items():
                 device = self.devices[dev_name]
-                frame = [Color(color.r, color.g, color.b) for _ in range(device.pixel_count)]
+                frame = [Color(0, 0, 0) for _ in range(device.pixel_count)]
+                for seg in segs:
+                    for i in range(seg.start, seg.start + seg.length):
+                        if 0 <= i < device.pixel_count:
+                            frame[i] = Color(color.r, color.g, color.b)
                 payload = EffectEngine.to_bytes(frame)
                 ArtNetClient(device.ip).send_dmx(device.universe, payload)
             return {"status": "sent"}
@@ -193,20 +218,30 @@ class RestAPI:
         def run_group_effect(name: str, effect: str, step: int = 0) -> Dict[str, str]:
             if name not in self.groups:
                 raise HTTPException(status_code=404, detail="Group not found")
-            for dev_name in self.groups[name]:
-                engine = self._get_engine(dev_name)
-                if effect == "cycle":
-                    colors = [Color(255, 0, 0), Color(0, 255, 0), Color(0, 0, 255)]
-                    frame = engine.color_cycle(colors, step)
-                elif effect == "wave":
-                    frame = engine.wave(Color(255, 255, 255), 20, step)
-                elif effect == "flicker":
-                    frame = engine.flicker(Color(255, 255, 255), (0.2, 1.0), step)
-                else:
-                    raise HTTPException(status_code=400, detail="Unknown effect")
-                payload = EffectEngine.to_bytes(frame)
-                base = self.devices[dev_name].universe
-                ArtNetClient(self.devices[dev_name].ip).send_dmx(base, payload)
+            group = self.groups[name]
+            by_device: Dict[str, List[LEDSegment]] = {}
+            for seg in group.segments:
+                by_device.setdefault(seg.device, []).append(seg)
+            for dev_name, segs in by_device.items():
+                device = self.devices[dev_name]
+                base_frame = [Color(0, 0, 0) for _ in range(device.pixel_count)]
+                for seg in segs:
+                    engine = EffectEngine(seg.length)
+                    if effect == "cycle":
+                        colors = [Color(255, 0, 0), Color(0, 255, 0), Color(0, 0, 255)]
+                        frame = engine.color_cycle(colors, step)
+                    elif effect == "wave":
+                        frame = engine.wave(Color(255, 255, 255), 20, step)
+                    elif effect == "flicker":
+                        frame = engine.flicker(Color(255, 255, 255), (0.2, 1.0), step)
+                    else:
+                        raise HTTPException(status_code=400, detail="Unknown effect")
+                    for i, col in enumerate(frame, start=seg.start):
+                        if 0 <= i < device.pixel_count:
+                            base_frame[i] = col
+                payload = EffectEngine.to_bytes(base_frame)
+                base = device.universe
+                ArtNetClient(device.ip).send_dmx(base, payload)
             return {"status": "sent"}
 
         @self.app.post("/devices/{name}/effect")

@@ -21,7 +21,13 @@ def test_register_device(client):
 
 def test_create_group(client):
     client.post("/devices", json={"name": "dev1", "ip": "1.2.3.4", "pixel_count": 10})
-    resp = client.post("/groups", json={"name": "g1", "devices": ["dev1"]})
+    resp = client.post(
+        "/groups",
+        json={
+            "name": "g1",
+            "segments": [{"device": "dev1", "start": 0, "length": 5}],
+        },
+    )
     assert resp.status_code == 200
     assert resp.json() == {"status": "group created"}
 

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
+from typing import Dict, List
 
 
 @dataclass
@@ -22,3 +22,20 @@ class DeviceGroup:
 
     name: str
     devices: List[LEDDevice]
+
+
+@dataclass
+class LEDSegment:
+    """A segment of LEDs on a device."""
+
+    device: str
+    start: int
+    length: int
+
+
+@dataclass
+class LightGroup:
+    """Group of LED segments possibly across multiple devices."""
+
+    name: str
+    segments: List[LEDSegment]

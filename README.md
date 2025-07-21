@@ -27,12 +27,11 @@ devices:
   - name: "strip1"
     ip: "192.168.1.50"
     pixel_count: 150
-    group: "stage_left"
 ```
 
 Each device entry must define the Art-Net device IP address and the
-number of pixels it controls. Devices can optionally be assigned to a
-group.
+number of pixels it controls. Groups are created separately using
+segments from one or more devices.
 
 Load the configuration with:
 
@@ -87,7 +86,7 @@ is available at `/panel` and the following API endpoints are exposed:
 * `GET /devices` – list registered devices.
 * `POST /devices` – register a new device.
 * `GET /groups` – list groups and their members.
-* `POST /groups` – create a new group.
+* `POST /groups` – create a new group from device segments.
 * `POST /devices/{name}/command` – send a hex encoded DMX payload to a device.
 * `POST /groups/{name}/command` – send a command to all devices in a group.
 * `POST /devices/{name}/effect` – run a built-in light effect on a device.
@@ -100,5 +99,5 @@ is available at `/panel` and the following API endpoints are exposed:
 Use any HTTP client or the web panel to manage your lighting setup.
 
 The `/panel` route now serves a basic HTML interface which can register
-devices and send colour or effect commands. Open
+devices, create groups and send colour or effect commands. Open
 `http://localhost:8000/panel` in a browser to try it out.
