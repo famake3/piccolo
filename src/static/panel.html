@@ -16,17 +16,30 @@
     <h2>Configuration</h2>
     <form id="device-form">
       <fieldset>
-        <legend>Add Device</legend>
-        <input name="name" placeholder="Name" required>
-        <input name="ip" placeholder="IP" required>
-        <input name="pixel_count" placeholder="Pixel count" type="number" required>
-        <input name="group" placeholder="Group">
-        <input name="universe" placeholder="Universe" type="number" value="0">
-        <button type="submit">Register</button>
-      </fieldset>
-    </form>
-    <div id="devices"></div>
-  </section>
+         <legend>Add Device</legend>
+         <input name="name" placeholder="Name" required>
+         <input name="ip" placeholder="IP" required>
+         <input name="pixel_count" placeholder="Pixel count" type="number" required>
+         <input name="universe" placeholder="Universe" type="number" value="0">
+         <button type="submit">Register</button>
+         </fieldset>
+      </form>
+      <div id="devices"></div>
+    </section>
+
+    <section>
+      <h2>Groups</h2>
+      <form id="group-form">
+        <fieldset>
+          <legend>Create Group</legend>
+          <input name="name" placeholder="Name" required>
+          <div id="segments"></div>
+          <button id="add-segment">Add Segment</button>
+          <button type="submit">Create</button>
+        </fieldset>
+      </form>
+      <div id="groups"></div>
+    </section>
 
   <section>
     <h2>Control</h2>
@@ -72,6 +85,16 @@ async function fetchDevices(){
 }
 fetchDevices();
 
+async function fetchGroups(){
+  const resp = await fetch('/groups');
+  const data = await resp.json();
+  const groups = Object.entries(data).map(([name, segs]) =>
+    name + ': ' + segs.map(s => `${s.device}[${s.start}-${s.start + s.length - 1}]`).join(', ')
+  );
+  document.getElementById('groups').innerText = groups.join('; ');
+}
+fetchGroups();
+
 async function postJson(url, payload){
   await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
 }
@@ -83,12 +106,42 @@ document.getElementById('device-form').addEventListener('submit', async (e) => {
     name: f.name.value,
     ip: f.ip.value,
     pixel_count: parseInt(f.pixel_count.value, 10),
-    group: f.group.value || null,
     universe: parseInt(f.universe.value || '0', 10)
   };
   await postJson('/devices', payload);
   f.reset();
   fetchDevices();
+});
+
+function addSegmentRow(){
+  const div = document.createElement('div');
+  div.className = 'segment';
+  div.innerHTML = '<input class="seg-device" placeholder="Device" required> ' +
+    '<input class="seg-start" placeholder="Start" type="number" value="0"> ' +
+    '<input class="seg-length" placeholder="Length" type="number" value="1">';
+  document.getElementById('segments').appendChild(div);
+}
+
+document.getElementById('add-segment').addEventListener('click', (e) => {
+  e.preventDefault();
+  addSegmentRow();
+});
+
+addSegmentRow();
+
+document.getElementById('group-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const segments = Array.from(document.querySelectorAll('#segments .segment')).map(div => ({
+    device: div.querySelector('.seg-device').value,
+    start: parseInt(div.querySelector('.seg-start').value, 10),
+    length: parseInt(div.querySelector('.seg-length').value, 10)
+  }));
+  const payload = {name: e.target.name.value, segments};
+  await postJson('/groups', payload);
+  e.target.reset();
+  document.getElementById('segments').innerHTML = '';
+  addSegmentRow();
+  fetchGroups();
 });
 
 document.getElementById('color-form').addEventListener('submit', async (e) => {

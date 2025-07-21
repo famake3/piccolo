@@ -27,7 +27,6 @@ def load_config(path: str | Path) -> Config:
             name=item.get("name", f"device_{i}"),
             ip=item["ip"],
             pixel_count=item["pixel_count"],
-            group=item.get("group"),
             universe=item.get("universe", 0),
         )
         for i, item in enumerate(data.get("devices", []))
