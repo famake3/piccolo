@@ -12,12 +12,21 @@ class LEDDevice:
     name: str
     ip: str
     pixel_count: int
-    group: str | None = None
+    universe: int = 0
 
 
 @dataclass
-class DeviceGroup:
-    """Logical group of multiple devices."""
+class LEDSegment:
+    """A segment of LEDs on a device."""
+
+    device: str
+    start: int
+    length: int
+
+
+@dataclass
+class LightGroup:
+    """Group of LED segments possibly across multiple devices."""
 
     name: str
-    devices: List[LEDDevice]
+    segments: List[LEDSegment]

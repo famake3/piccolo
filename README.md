@@ -17,6 +17,18 @@ Install Python dependencies:
 pip install -r requirements.txt
 ```
 
+## Quick Start
+
+After installing the dependencies, launch the built-in REST API server and
+web panel:
+
+```bash
+python -m src.rest_api
+```
+
+The server listens on <http://localhost:8000>. Open `/panel` in your browser
+to register devices and begin controlling your LEDs.
+
 ## Configuration
 
 Devices are described in a YAML configuration file. See
@@ -27,12 +39,11 @@ devices:
   - name: "strip1"
     ip: "192.168.1.50"
     pixel_count: 150
-    group: "stage_left"
 ```
 
 Each device entry must define the Art-Net device IP address and the
-number of pixels it controls. Devices can optionally be assigned to a
-group.
+number of pixels it controls. Groups are created separately using
+segments from one or more devices.
 
 Load the configuration with:
 
@@ -87,14 +98,23 @@ is available at `/panel` and the following API endpoints are exposed:
 * `GET /devices` – list registered devices.
 * `POST /devices` – register a new device.
 * `GET /groups` – list groups and their members.
-* `POST /groups` – create a new group.
+* `POST /groups` – create a new group from device segments.
 * `POST /devices/{name}/command` – send a hex encoded DMX payload to a device.
 * `POST /groups/{name}/command` – send a command to all devices in a group.
 * `POST /devices/{name}/effect` – run a built-in light effect on a device.
 * `POST /groups/{name}/effect` – run an effect on all devices in a group.
+* `POST /devices/{name}/color` – set a device to a solid color.
+* `POST /groups/{name}/color` – set a group of devices to a color.
 * `GET /favorites` – list stored colours.
 * `POST /favorites` – add a favourite colour.
 * `DELETE /favorites/{name}` – remove a favourite colour.
 * `POST /triggers/{event}` – trigger a named event hook.
 
+Color and effect endpoints accept an optional `universe` query parameter
+which is added to each device's base universe when sending data.
+
 Use any HTTP client or the web panel to manage your lighting setup.
+
+The `/panel` route now serves a basic HTML interface which can register
+devices, create groups and send colour or effect commands. Open
+`http://localhost:8000/panel` in a browser to try it out.
