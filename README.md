@@ -98,3 +98,7 @@ is available at `/panel` and the following API endpoints are exposed:
 * `POST /triggers/{event}` – trigger a named event hook.
 
 Use any HTTP client or the web panel to manage your lighting setup.
+
+The `/panel` route now serves a basic HTML interface which can register
+devices and send colour or effect commands. Open
+`http://localhost:8000/panel` in a browser to try it out.

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Piccolo Control Panel</title>
+  <style>
+    body { font-family: sans-serif; margin: 2em; }
+    form { margin-bottom: 1em; }
+    fieldset { margin-bottom: 1em; }
+  </style>
+</head>
+<body>
+  <h1>Piccolo Control Panel</h1>
+
+  <section>
+    <h2>Configuration</h2>
+    <form id="device-form">
+      <fieldset>
+        <legend>Add Device</legend>
+        <input name="name" placeholder="Name" required>
+        <input name="ip" placeholder="IP" required>
+        <input name="pixel_count" placeholder="Pixel count" type="number" required>
+        <input name="group" placeholder="Group">
+        <input name="universe" placeholder="Universe" type="number" value="0">
+        <button type="submit">Register</button>
+      </fieldset>
+    </form>
+    <div id="devices"></div>
+  </section>
+
+  <section>
+    <h2>Control</h2>
+    <form id="color-form">
+      <fieldset>
+        <legend>Set Color</legend>
+        <input id="color-target" placeholder="Device or Group" required>
+        <select id="color-type">
+          <option value="device">Device</option>
+          <option value="group">Group</option>
+        </select>
+        <input type="color" id="color-picker" value="#ffffff">
+        <button type="submit">Send</button>
+      </fieldset>
+    </form>
+
+    <form id="effect-form">
+      <fieldset>
+        <legend>Run Effect</legend>
+        <input id="effect-target" placeholder="Device or Group" required>
+        <select id="effect-type">
+          <option value="device">Device</option>
+          <option value="group">Group</option>
+        </select>
+        <select id="effect-name">
+          <option value="cycle">Cycle</option>
+          <option value="wave">Wave</option>
+          <option value="flicker">Flicker</option>
+        </select>
+        <button type="submit">Run</button>
+      </fieldset>
+    </form>
+  </section>
+
+<script>
+async function fetchDevices(){
+  const resp = await fetch('/devices');
+  const data = await resp.json();
+  document.getElementById('devices').innerText =
+      data.map(d => d.name + ' (' + d.ip + ')').join(', ');
+}
+fetchDevices();
+
+async function postJson(url, payload){
+  await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+}
+
+document.getElementById('device-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const payload = {
+    name: f.name.value,
+    ip: f.ip.value,
+    pixel_count: parseInt(f.pixel_count.value, 10),
+    group: f.group.value || null,
+    universe: parseInt(f.universe.value || '0', 10)
+  };
+  await postJson('/devices', payload);
+  f.reset();
+  fetchDevices();
+});
+
+document.getElementById('color-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('color-target').value;
+  const targetType = document.getElementById('color-type').value;
+  const hex = document.getElementById('color-picker').value.substring(1);
+  const r = parseInt(hex.substring(0,2), 16);
+  const g = parseInt(hex.substring(2,4), 16);
+  const b = parseInt(hex.substring(4,6), 16);
+  const payload = {r, g, b};
+  await postJson(`/${targetType}s/${name}/color`, payload);
+});
+
+document.getElementById('effect-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('effect-target').value;
+  const targetType = document.getElementById('effect-type').value;
+  const effect = document.getElementById('effect-name').value;
+  await fetch(`/${targetType}s/${name}/effect?effect=${effect}`, {method:'POST'});
+});
+</script>
+</body>
+</html>
