@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from pathlib import Path
 from typing import Callable, Dict, List, Optional, TYPE_CHECKING
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
 from pydantic import BaseModel
 
 from .devices import LEDDevice
@@ -51,6 +52,14 @@ class FavoriteModel(BaseModel):
     b: int
 
 
+class ColorPayload(BaseModel):
+    """Payload for setting a uniform color."""
+
+    r: int
+    g: int
+    b: int
+
+
 class RestAPI:
     """Simple REST API server providing device management."""
 
@@ -89,13 +98,9 @@ class RestAPI:
             return "Piccolo control panel running."
 
         @self.app.get("/panel", response_class=HTMLResponse)
-        def panel() -> str:
-            return (
-                "<html><head><title>Piccolo Control Panel</title></head>"
-                "<body><h1>Piccolo Control Panel</h1>"
-                "<p>Use a REST client to manage devices and groups.</p>"
-                "</body></html>"
-            )
+        def panel() -> FileResponse:
+            path = Path(__file__).parent / "static" / "panel.html"
+            return FileResponse(path)
 
         @self.app.get("/devices")
         def list_devices() -> List[Dict[str, object]]:
@@ -161,6 +166,27 @@ class RestAPI:
                 client = ArtNetClient(self.devices[dev_name].ip)
                 base = self.devices[dev_name].universe
                 client.send_dmx(base + cmd.universe, payload)
+            return {"status": "sent"}
+
+        @self.app.post("/devices/{name}/color")
+        def set_device_color(name: str, color: ColorPayload) -> Dict[str, str]:
+            if name not in self.devices:
+                raise HTTPException(status_code=404, detail="Device not found")
+            device = self.devices[name]
+            frame = [Color(color.r, color.g, color.b) for _ in range(device.pixel_count)]
+            payload = EffectEngine.to_bytes(frame)
+            ArtNetClient(device.ip).send_dmx(device.universe, payload)
+            return {"status": "sent"}
+
+        @self.app.post("/groups/{name}/color")
+        def set_group_color(name: str, color: ColorPayload) -> Dict[str, str]:
+            if name not in self.groups:
+                raise HTTPException(status_code=404, detail="Group not found")
+            for dev_name in self.groups[name]:
+                device = self.devices[dev_name]
+                frame = [Color(color.r, color.g, color.b) for _ in range(device.pixel_count)]
+                payload = EffectEngine.to_bytes(frame)
+                ArtNetClient(device.ip).send_dmx(device.universe, payload)
             return {"status": "sent"}
 
         @self.app.post("/groups/{name}/effect")
