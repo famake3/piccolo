@@ -1,5 +1,6 @@
 PyYAML>=6.0
 fastapi>=0.100
 uvicorn>=0.22
+paho-mqtt>=1.6
 
 pytest>=7.0
