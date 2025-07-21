@@ -13,6 +13,7 @@ class LEDDevice:
     ip: str
     pixel_count: int
     universe: int = 0
+    group: str | None = None
 
 
 @dataclass
