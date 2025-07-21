@@ -17,6 +17,18 @@ Install Python dependencies:
 pip install -r requirements.txt
 ```
 
+## Quick Start
+
+After installing the dependencies, launch the built-in REST API server and
+web panel:
+
+```bash
+python -m src.rest_api
+```
+
+The server listens on <http://localhost:8000>. Open `/panel` in your browser
+to register devices and begin controlling your LEDs.
+
 ## Configuration
 
 Devices are described in a YAML configuration file. See
