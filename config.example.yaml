@@ -1,0 +1,12 @@
+# Example configuration file for piccolo
+
+# List of Art-Net LED devices
+devices:
+  - name: "strip1"
+    ip: "192.168.1.50"
+    pixel_count: 150
+    group: "stage_left"
+  - name: "strip2"
+    ip: "192.168.1.51"
+    pixel_count: 150
+    group: "stage_right"
