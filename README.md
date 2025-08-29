@@ -118,3 +118,7 @@ Use any HTTP client or the web panel to manage your lighting setup.
 The `/panel` route now serves a basic HTML interface which can register
 devices, create groups and send colour or effect commands. Open
 `http://localhost:8000/panel` in a browser to try it out.
+
+## Particle Photon Firmware
+
+A sample Particle Photon sketch for receiving Art-Net data and updating a strip of NeoPixels is available at `firmware/photon_artnet/photon_artnet.ino`. Import it into the Particle IDE and add the `neopixel` library to build firmware for your hardware. The sketch also registers a Particle variable `ip` with the device's current IP address, which you can view in the Particle Console, Web IDE, or CLI.
