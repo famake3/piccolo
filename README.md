@@ -122,3 +122,45 @@ devices, create groups and send colour or effect commands. Open
 ## Particle Photon Firmware
 
 A sample Particle Photon sketch for receiving Art-Net data and updating a strip of NeoPixels is available at `firmware/photon_artnet/photon_artnet.ino`. Import it into the Particle IDE and add the `neopixel` library to build firmware for your hardware. The sketch also registers a Particle variable `ip` with the device's current IP address, which you can view in the Particle Console, Web IDE, or CLI.
+
+## Raspberry Pi Art-Net Service
+
+An example Python service for Raspberry Pi devices is provided at
+`firmware/rpi_artnet_service/artnet_service.py`. The script listens for
+Art-Net packets and drives a connected NeoPixel or DotStar strip. It
+handles multiple universes automatically so installations with more than
+170 pixels can be controlled from a single Pi.
+
+### Setup
+
+1. Enable the required hardware interfaces via `raspi-config` (enable SPI for
+   DotStar strips).
+2. Install the CircuitPython compatibility layer and LED drivers. On Raspberry
+   Pi OS you can use `apt`:
+
+   ```sh
+   sudo apt update
+   sudo apt install python3-adafruit-blinka \
+       python3-adafruit-circuitpython-neopixel \
+       python3-adafruit-circuitpython-dotstar
+   ```
+
+   Or create a virtual environment and use `pip`:
+
+   ```sh
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install adafruit-blinka adafruit-circuitpython-neopixel \
+       adafruit-circuitpython-dotstar
+   ```
+
+3. Run the service with your strip type and pixel count:
+
+   ```sh
+   python3 artnet_service.py --led-type neopixel --num-pixels 300 --pin D18
+   python3 artnet_service.py --led-type dotstar --num-pixels 300 \
+       --data-pin MOSI --clock-pin SCLK
+   ```
+
+You may need `sudo` when accessing hardware pins. See
+`firmware/rpi_artnet_service/README.md` for more details.
