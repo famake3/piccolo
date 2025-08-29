@@ -162,5 +162,9 @@ handles multiple universes automatically so installations with more than
        --data-pin MOSI --clock-pin SCLK
    ```
 
-You may need `sudo` when accessing hardware pins. See
+   For NeoPixels, connect the data line to GPIO18 (labelled `D18`, physical pin 12).
+   DotStar strips use the SPI0 pins: connect data to MOSI (GPIO10, physical pin 19)
+   and clock to SCLK (GPIO11, physical pin 23).
+
+   You may need `sudo` when accessing hardware pins. See
 `firmware/rpi_artnet_service/README.md` for more details.
