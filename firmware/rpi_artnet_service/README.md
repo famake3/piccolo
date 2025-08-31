@@ -16,12 +16,14 @@ NeoPixel strips should be connected to GPIO18 (`D18`, physical pin 12). DotStar
 strips use the SPI0 interface: wire data to MOSI (GPIO10, physical pin 19) and
 clock to SCLK (GPIO11, physical pin 23).
 
-Install the appropriate CircuitPython library for your LED type and the `RPi.GPIO`
-dependency before running. NeoPixel strips also require the `rpi_ws281x` library
-and must run with root privileges to access `/dev/mem`. For example, `pip install
-adafruit-circuitpython-neopixel RPi.GPIO rpi_ws281x`. The `install_service.sh`
-script installs these dependencies automatically and forces the systemd service
-to run as root when NeoPixel is selected.
+Install the appropriate CircuitPython library for your LED type along with
+`adafruit-blinka` (which provides the ``board`` module) and the `python3-lgpio`
+package required on modern Raspberry Pi boards. NeoPixel strips also require the
+`rpi_ws281x` library and must run with root privileges to access `/dev/mem`. For
+example, `pip install adafruit-blinka adafruit-circuitpython-neopixel rpi_ws281x`.
+The `install_service.sh` script installs these dependencies automatically,
+configures `lgpio` to use `/tmp` for its notification files, and forces the
+systemd service to run as root when NeoPixel is selected.
 
 ## Systemd Installation
 

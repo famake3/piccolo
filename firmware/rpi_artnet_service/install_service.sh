@@ -24,7 +24,7 @@ if [[ "$LED_TYPE" == "neopixel" ]]; then
   read -rp "Data pin [D18]: " PIN
   PIN=${PIN:-D18}
   LED_ARGS="--led-type neopixel --num-pixels ${NUM_PIXELS} --pin ${PIN} --brightness ${BRIGHTNESS}"
-  PYTHON_REQ=(adafruit-circuitpython-neopixel rpi_ws281x)
+  PYTHON_REQ=(adafruit-blinka adafruit-circuitpython-neopixel rpi_ws281x RPi.GPIO)
   if [[ "$SERVICE_USER" != "root" ]]; then
     echo "NeoPixel requires root privileges. Forcing service user to root."
     SERVICE_USER=root
@@ -35,16 +35,20 @@ else
   read -rp "Clock pin [SCLK]: " CLOCK_PIN
   CLOCK_PIN=${CLOCK_PIN:-SCLK}
   LED_ARGS="--led-type dotstar --num-pixels ${NUM_PIXELS} --data-pin ${DATA_PIN} --clock-pin ${CLOCK_PIN} --brightness ${BRIGHTNESS}"
-  PYTHON_REQ=(adafruit-circuitpython-dotstar)
+  PYTHON_REQ=(adafruit-blinka adafruit-circuitpython-dotstar RPi.GPIO)
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+sudo apt-get update
+sudo apt-get install -y python3-lgpio
+
 sudo mkdir -p "${INSTALL_DIR}"
 sudo cp "${SCRIPT_DIR}/artnet_service.py" "${INSTALL_DIR}/"
-python3 -m venv "${INSTALL_DIR}/venv"
+python3 -m venv --system-site-packages "${INSTALL_DIR}/venv"
 "${INSTALL_DIR}/venv/bin/pip" install --upgrade pip
-"${INSTALL_DIR}/venv/bin/pip" install RPi.GPIO "${PYTHON_REQ[@]}"
+"${INSTALL_DIR}/venv/bin/pip" install "${PYTHON_REQ[@]}"
+sudo chown -R "${SERVICE_USER}:${SERVICE_USER}" "${INSTALL_DIR}"
 
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 sudo tee "${SERVICE_FILE}" > /dev/null <<SERVICE
@@ -56,6 +60,7 @@ After=network.target
 Type=simple
 User=${SERVICE_USER}
 WorkingDirectory=${INSTALL_DIR}
+Environment=LGDIR=/tmp
 ExecStart=${INSTALL_DIR}/venv/bin/python ${INSTALL_DIR}/artnet_service.py ${LED_ARGS}
 Restart=on-failure
 
