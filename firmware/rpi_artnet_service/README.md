@@ -18,3 +18,14 @@ clock to SCLK (GPIO11, physical pin 23).
 
 Install the appropriate CircuitPython library for your LED type before running
 (e.g. `pip install adafruit-circuitpython-neopixel`).
+
+## Systemd Installation
+
+Use the provided script to install the service so it starts on boot:
+
+```sh
+./install_service.sh
+```
+
+The script prompts for the target directory, Linux user, LED type and pin configuration,
+then creates a virtual environment and systemd unit. The service is enabled and started immediately.
