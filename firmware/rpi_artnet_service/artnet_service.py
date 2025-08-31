@@ -105,6 +105,8 @@ def run_service(args: argparse.Namespace) -> None:
 
     bytes_per_pixel = 3  # RGB only for now
     pixels_per_universe = 512 // bytes_per_pixel
+    total_universes = (args.num_pixels + pixels_per_universe - 1) // pixels_per_universe
+    last_universe = total_universes - 1
     buffer = [(0, 0, 0)] * args.num_pixels
 
     while True:
@@ -122,7 +124,9 @@ def run_service(args: argparse.Namespace) -> None:
             idx = start + i
             buffer[idx] = (r, g, b)
             strip[idx] = (r, g, b)
-        strip.show()
+        # Only refresh once the final universe has been processed
+        if universe == last_universe:
+            strip.show()
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
