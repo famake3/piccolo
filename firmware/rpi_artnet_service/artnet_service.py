@@ -17,6 +17,7 @@ import argparse
 import logging
 import socket
 import struct
+import time
 from typing import Iterable, Optional, Tuple
 
 # Art-Net constants
@@ -109,6 +110,13 @@ def run_service(args: argparse.Namespace) -> None:
     last_universe = total_universes - 1
     buffer = [(0, 0, 0)] * args.num_pixels
 
+    # Benchmarking state
+    if args.benchmark:
+        bench_interval = 5.0
+        last_report = time.perf_counter()
+        frame_count = 0
+        show_time_total = 0.0
+
     while True:
         data, _addr = sock.recvfrom(1024)
         parsed = _parse_artdmx(data)
@@ -126,7 +134,25 @@ def run_service(args: argparse.Namespace) -> None:
             strip[idx] = (r, g, b)
         # Only refresh once the final universe has been processed
         if universe == last_universe:
-            strip.show()
+            if args.benchmark:
+                start_time = time.perf_counter()
+                strip.show()
+                show_time_total += time.perf_counter() - start_time
+                frame_count += 1
+                now = time.perf_counter()
+                if now - last_report >= bench_interval:
+                    fps = frame_count / (now - last_report)
+                    avg_show = show_time_total / frame_count if frame_count else 0.0
+                    _LOGGER.info(
+                        "Average FPS: %.2f, average strip.show() time: %.6f s",
+                        fps,
+                        avg_show,
+                    )
+                    last_report = now
+                    frame_count = 0
+                    show_time_total = 0.0
+            else:
+                strip.show()
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -137,6 +163,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--pin", default="D18", help="NeoPixel data pin (when using neopixel)")
     parser.add_argument("--data-pin", default="MOSI", help="DotStar data pin (when using dotstar)")
     parser.add_argument("--clock-pin", default="SCLK", help="DotStar clock pin (when using dotstar)")
+    parser.add_argument(
+        "--benchmark",
+        action="store_true",
+        help="Print average FPS and strip.show() timings every five seconds",
+    )
     return parser
 
 

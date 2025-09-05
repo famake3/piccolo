@@ -10,6 +10,7 @@ be controlled.
 ```sh
 python3 artnet_service.py --led-type neopixel --num-pixels 300 --pin D18
 python3 artnet_service.py --led-type dotstar --num-pixels 300 --data-pin MOSI --clock-pin SCLK
+python3 artnet_service.py --led-type neopixel --num-pixels 300 --pin D18 --benchmark
 ```
 
 NeoPixel strips should be connected to GPIO18 (`D18`, physical pin 12). DotStar
@@ -24,6 +25,12 @@ example, `pip install adafruit-blinka adafruit-circuitpython-neopixel rpi_ws281x
 The `install_service.sh` script installs these dependencies automatically,
 configures `lgpio` to use `/tmp` for its notification files, and forces the
 systemd service to run as root when NeoPixel is selected.
+
+## Benchmarking
+
+Enable benchmarking with the `--benchmark` flag to log the average frames per
+second and the average time spent in `strip.show()` every five seconds. This is
+useful when tuning performance or evaluating different hardware setups.
 
 ## Systemd Installation
 
