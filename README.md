@@ -160,6 +160,8 @@ handles multiple universes automatically so installations with more than
    python3 artnet_service.py --led-type neopixel --num-pixels 300 --pin D18
    python3 artnet_service.py --led-type dotstar --num-pixels 300 \
        --data-pin MOSI --clock-pin SCLK
+   # Append --benchmark to log average FPS and strip.show() times
+   python3 artnet_service.py --led-type neopixel --num-pixels 300 --pin D18 --benchmark
    ```
 
    For NeoPixels, connect the data line to GPIO18 (labelled `D18`, physical pin 12).
